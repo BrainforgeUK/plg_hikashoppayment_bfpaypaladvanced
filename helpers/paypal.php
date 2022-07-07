@@ -34,7 +34,7 @@ class plgHikashoppaymentBfpaypaladvancedHelper
 		{
 			$paypalHelper = new plgHikashoppaymentBfpaypaladvancedHelper($plugin);
 
-			$paypalHelper->paypal_params = $plugin->app->getUserState('bfpaypaladvanced.paypal_params');
+			$paypalHelper->paypal_params = $plugin->app->getUserState('plghikashoppayment.bfpaypaladvanced.paypal_params');
 			if (empty($paypalHelper->paypal_params->status))
 			{
 				$paypalHelper->paypal_params = new stdClass();
@@ -48,7 +48,7 @@ class plgHikashoppaymentBfpaypaladvancedHelper
 
 				$paypalHelper->paypal_params->status = true;
 
-				$plugin->app->setUserState('bfpaypaladvanced.paypal_params', $paypalHelper->paypal_params);
+				$plugin->app->setUserState('plghikashoppayment.bfpaypaladvanced.paypal_params', $paypalHelper->paypal_params);
 			}
 		}
 		catch (Exception $e)
@@ -70,7 +70,7 @@ class plgHikashoppaymentBfpaypaladvancedHelper
 		{
 			$paypalHelper = new plgHikashoppaymentBfpaypaladvancedHelper($plugin);
 
-			$paypalHelper->paypal_params = $plugin->app->getUserState('bfpaypaladvanced.paypal_params');
+			$paypalHelper->paypal_params = $plugin->app->getUserState('plghikashoppayment.bfpaypaladvanced.paypal_params');
 			if (empty($paypalHelper->paypal_params->status))
 			{
 				return false;
@@ -335,5 +335,24 @@ class plgHikashoppaymentBfpaypaladvancedHelper
 	public function getNotifyUrl($action)
 	{
 		return $this->plugin->getNotifyUrl($action);
+	}
+
+	/*
+	 */
+	public function consoleLog($log=null, $alert=null)
+	{
+		$result = [];
+
+		if (!empty($alert))
+		{
+			$result[] = 'alert("' . str_replace('"', '\\"', Text::_($alert)) .'");';
+		}
+
+		if ($this->plugin_params->debug && !empty($log))
+		{
+			$result[] = 'console.log(' . implode(',', (array)$log) . ');';
+		}
+
+		return implode("\n", $result);
 	}
 }

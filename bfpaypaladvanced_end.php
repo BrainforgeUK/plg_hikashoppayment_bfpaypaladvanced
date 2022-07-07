@@ -30,7 +30,7 @@ if (strpos($this->plugin_params->return_url, 'PLG_BFPAYPALADVANCED_RETURNURL') =
     <?php
     plgHikashoppaymentBfpaypaladvancedHelper::newCardForm($this);
 
-    $cancelUrl = $this->getNotifyUrl('onCancel');
+    $cancelUrl = $this->getNotifyUrl('cancel');
     ?>
     <div id="bfpaypaladvanced-cancel">
         <a class="hikabtn hikacart"
@@ -39,4 +39,16 @@ if (strpos($this->plugin_params->return_url, 'PLG_BFPAYPALADVANCED_RETURNURL') =
             <?php echo Text::_('PLG_BFPAYPALADVANCED_CANCEL_ORDER'); ?>
         </a>
     </div>
+
+	<?php
+	if ($this->plugin_params->sandbox)
+	{
+		?>
+        <hr/>
+		<?php echo Text::_('PLG_BFPAYPALADVANCED_SANDBOXNOTES'); ?>
+        <pre><?php echo $this->plugin_params->notes; ?></pre>
+        <br/>
+		<?php
+	}
+	?>
 </div>
