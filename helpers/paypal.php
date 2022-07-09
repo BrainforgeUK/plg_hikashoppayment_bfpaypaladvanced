@@ -355,4 +355,58 @@ class plgHikashoppaymentBfpaypaladvancedHelper
 
 		return implode("\n", $result);
 	}
+
+	/*
+	 */
+	public function getAddressInfo($type='shipping')
+	{
+		$fields = array(
+			'address_line_1' => 'address_street',
+			'address_line_2' => 'address_street2',
+			'admin_area_2'   => 'address_city',
+			'admin_area_1'   => 'address_state',
+			'postal_code'    => 'address_post_code',
+			'country_code'   => 'address_country',
+		);
+
+		switch($type)
+		{
+			case 'billing':
+				$cartField = 'billing_address';
+				break;
+			default:
+				return false;
+		}
+
+		$zoneClass = hikashop_get('class.zone');
+
+		$result = [];
+		foreach($fields as $paypalField=>$addressField)
+		{
+			switch($paypalField)
+			{
+				case 'address_line_1':
+				case 'admin_area_2':
+				case 'postal_code':
+					$addressField = trim(@$this->order->cart->$cartField->$addressField);
+					if (empty($addressField)) return false;
+					break;
+				case 'country_code':
+					$addressField = @$this->order->cart->$cartField->$addressField;
+					if (empty($addressField)) return false;
+					$addressField = $zoneClass->getZones(array($addressField[0]), 'zone_code_2', 'zone_namekey', true)[0];
+					if (empty($addressField)) return false;
+					break;
+				case 'admin_area_1':
+					$addressField = @$this->order->cart->$cartField->$addressField;
+					if (empty($addressField)) continue 2;
+					$addressField = $zoneClass->getZones(array($addressField[0]), 'zone_name', 'zone_namekey', true)[0];
+					break;
+			}
+
+			$result[$paypalField] =  $addressField;
+		}
+
+		return $result;
+	}
 }

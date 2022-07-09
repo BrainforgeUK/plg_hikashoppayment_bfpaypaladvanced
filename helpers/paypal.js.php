@@ -16,11 +16,9 @@ $jsArgs[] = 'components=hosted-fields';
 $jsArgs[] = 'client-id=' . $paypalHelper->plugin_params->client_id;
 $jsArgs[] = 'currency='  . $paypalHelper->order->order_currency_info->currency_code;
 $jsArgs[] = 'intent=capture';
-// See : https://developer.paypal.com/docs/multiparty/get-started#code-and-credential-reference
-// $jsArgs[] = 'data-partner-attribution-id="<BN-Code>';
 ?>
 <script src="https://www.paypal.com/sdk/js?<?php echo implode('&', $jsArgs);?>"
-        data-client-token=<?php echo $paypalHelper->paypal_params->clientToken; ?>
+        data-client-token="<?php echo $paypalHelper->paypal_params->clientToken; ?>"
 ></script>
 
 <div id="card-button-container">
@@ -78,23 +76,14 @@ $jsArgs[] = 'intent=capture';
                     cardFields.submit({
                         // Cardholder's first and last name
                         cardholderName: document.getElementById('card-holder-name').value,
+                        <?php
+                        /* TODO
                         // Billing Address
                         billingAddress: {
-                            /*
-                            // Street address, line 1
-                            streetAddress: document.getElementById('card-billing-address-street').value,
-                            // Street address, line 2 (Ex: Unit, Apartment, etc.)
-                            extendedAddress: document.getElementById('card-billing-address-unit').value,
-                            // State
-                            region: document.getElementById('card-billing-address-state').value,
-                            // City
-                            locality: document.getElementById('card-billing-address-city').value,
-                            */
-                            // Postal Code
-                            //postalCode: document.getElementById('card-billing-address-zip').value,
-                            // Country Code
                             countryCodeAlpha2: document.getElementById('card-billing-address-country').value
                         }
+                        */
+                        ?>
                     }).then(function () {
                         fetch('<?php echo $paypalHelper->getNotifyUrl('capture'); ?>'
                         ).then(function(res) {

@@ -7,10 +7,17 @@
  * @license   GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
  */
 
+use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 
 defined('_JEXEC') or die('Restricted access');
 
+Factory::getDocument()->addStyleSheet('https://www.paypalobjects.com/webstatic/en_US/developer/docs/css/cardfields.css');
+
+// TODO
+/** @var plgHikashoppaymentBfpaypaladvancedHelper $paypalHelper */
+//$addressInfo = $paypalHelper->getAddressInfo('billing');
+//$addressInfo['country_code'] = 'IE';
 ?>
 <div class="card_container">
     <form id="card-form">
@@ -35,27 +42,18 @@ defined('_JEXEC') or die('Restricted access');
                placeholder="<?php echo Text::_('PLG_BFPAYPALADVANCED_NAMEONCARD'); ?>"
         />
 
-        <!--
-        <div>
-            <input type="text"
-                   id="card-billing-address-zip"
-                   name="card-billing-address-zip"
-                   autocomplete="off"
-                   placeholder="<?php echo Text::_('PLG_BFPAYPALADVANCED_ZIP'); ?>"
-            />
-        </div>
-        -->
-
-        <div>
-            <label for="card-billing-address-country"><?php echo Text::_('PLG_BFPAYPALADVANCED_COUNTRYCODE'); ?></label>
-            <input type="text"
-                   id="card-billing-address-country"
-                   name="card-billing-address-country"
-                   autocomplete="off"
-                   value="IE"
-                   placeholder="<?php echo Text::_('PLG_BFPAYPALADVANCED_COUNTRYCODE'); ?>"
-            />
-        </div>
+        <?php
+        /* TODO
+        ?>
+        <label for="card-billing-address-country"><?php echo Text::_('PLG_BFPAYPALADVANCED_COUNTRYCODE'); ?></label>
+        <input type="text"
+               id="card-billing-address-country"
+               name="card-billing-address-country"
+               autocomplete="off"
+               value="<?php echo $addressInfo['country_code']; ?>"
+        />
+        */
+        ?>
 
         <br/><br/>
 
