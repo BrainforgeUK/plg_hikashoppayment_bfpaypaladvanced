@@ -54,18 +54,17 @@ $jsArgs[] = 'intent=capture';
                 fields: {
                     number: {
                         selector: "#card-number",
-                        placeholder: "4111 1111 1111 1111"
+                        placeholder: "<?php echo Text::_('PLG_BFPAYPALADVANCED_CARDNUMBER_PLACEHOLDER'); ?>"
                     },
 
                     cvv: {
                         selector: "#cvv",
-                        placeholder: "123"
-
+                        placeholder: "<?php echo Text::_('PLG_BFPAYPALADVANCED_CVV_PLACEHOLDER'); ?>"
                     },
 
                     expirationDate: {
                         selector: "#expiration-date",
-                        placeholder: "MM/YY"
+                        placeholder: "<?php echo Text::_('PLG_BFPAYPALADVANCED_EXPIRATIONDATE_PLACEHOLDER'); ?>"
                     }
                 }
 

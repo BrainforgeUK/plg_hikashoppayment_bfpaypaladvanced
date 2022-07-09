@@ -39,7 +39,7 @@ Factory::getDocument()->addStyleSheet('https://www.paypalobjects.com/webstatic/e
                id="card-holder-name"
                name="card-holder-name"
                autocomplete="off"
-               placeholder="<?php echo Text::_('PLG_BFPAYPALADVANCED_NAMEONCARD'); ?>"
+               placeholder="<?php echo Text::_('PLG_BFPAYPALADVANCED_NAMEONCARD_PLACEHOLDER'); ?>"
         />
 
         <?php
