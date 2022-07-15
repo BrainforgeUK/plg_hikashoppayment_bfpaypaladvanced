@@ -281,7 +281,7 @@ class plgHikashoppaymentBfpaypaladvanced extends hikashopPaymentPlugin
 					$cartClass = hikashop_get('class.cart');
 					$cartClass->cleanCartFromSession(false, true);
 
-					$output->message = Text::sprintf('PLG_BFPAYPALADVANCE_ORDERCOMPLETED', $this->order->order_number);
+					$output->message = Text::sprintf('PLG_BFPAYPALADVANCED_ORDERCOMPLETED', $this->order->order_number);
 
 					if (empty($this->plugin_params->return_url))
 					{

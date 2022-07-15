@@ -20,7 +20,7 @@ Factory::getDocument()->addStyleSheet('https://www.paypalobjects.com/webstatic/e
 //$addressInfo['country_code'] = 'IE';
 ?>
 <div class="card_container">
-    <form id="card-form">
+    <form id="bfpaypaladvanced-card-form">
         <label for="card-number"><?php echo Text::_('PLG_BFPAYPALADVANCED_CARDNUMBER'); ?></label>
         <div id="card-number" class="card_field"></div>
 

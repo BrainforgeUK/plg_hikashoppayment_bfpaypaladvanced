@@ -30,7 +30,7 @@ $jsArgs[] = 'intent=capture';
         function initCardForm() {
             if (!paypal.HostedFields.isEligible()) {
                 // Hides card fields if the merchant isn't eligible
-                document.querySelector("#card-form").style = 'display: none';
+                document.querySelector("#bfpaypaladvanced-card-form").style = 'display: none';
                 <?php echo $paypalHelper->consoleLog(null, 'PLG_BFPAYPALADVANCED_UNSUPPORTEDMERCHANT'); ?>
                 return;
             }
@@ -75,7 +75,7 @@ $jsArgs[] = 'intent=capture';
                 }
 
             }).then(function (hf) {
-                document.querySelector('#card-form').addEventListener('submit', (event) => {
+                document.querySelector('#bfpaypaladvanced-card-form').addEventListener('submit', (event) => {
 
                     event.preventDefault();
 
@@ -100,7 +100,7 @@ $jsArgs[] = 'intent=capture';
                                     alert(response.message);
                                     break;
                                 case '1':
-                                    document.getElementById('bfpaypalstandard-end').innerHTML = response.message;
+                                    document.getElementById('bfpaypaladvanced-end').innerHTML = response.message;
                                     break;
                                 case '2':
                                     window.location.href = response.url;
