@@ -27,6 +27,18 @@ $jsArgs[] = 'intent=capture';
     <script>
         let orderId = "";
 
+        function enablePayButton()
+        {
+            document.getElementById('bfpaypaladvanced-card-submit').disabled = '';
+            document.getElementById('bfpaypaladvanced-card-submit-busy').style.visibility = 'hidden';
+        }
+
+        function disablePayButton()
+        {
+            document.getElementById('bfpaypaladvanced-card-submit').disabled = 'disabled';
+            document.getElementById('bfpaypaladvanced-card-submit-busy').style.visibility = 'visible';
+        }
+
         function initCardForm() {
             if (!paypal.HostedFields.isEligible()) {
                 // Hides card fields if the merchant isn't eligible
@@ -50,10 +62,10 @@ $jsArgs[] = 'intent=capture';
 
                 styles: {
                     '.valid': {
-                        'color': 'green'
+                        'color': 'green',
                     },
                     '.invalid': {
-                        'color': 'red'
+                        'color': 'red',
                     },
                 },
 
@@ -79,10 +91,17 @@ $jsArgs[] = 'intent=capture';
 
                     event.preventDefault();
 
+                    disablePayButton();
+
                     hf.submit({
                         // Trigger 3D Secure authentication
                         contingencies: ['<?php echo $paypalHelper->get3DSecureContingency(); ?>'],
+                    }).catch(function (err) {
+                        enablePayButton();
                     }).then(function (payload) {
+                        if (payload == undefined) {
+                            return;
+                        }
                         fetch('<?php echo $paypalHelper->getNotifyUrl('capture'); ?>&payload=' + btoa(JSON.stringify(payload))
                         ).then(function(res) {
                             return res.json();
@@ -109,8 +128,11 @@ $jsArgs[] = 'intent=capture';
                             		<?php echo $paypalHelper->consoleLog(null, 'PLG_BFPAYPALADVANCED_PAYMENTERROR'); ?>
                                     break;
                             }
+                            enablePayButton();
+
                         }).catch(function (err) {
                             <?php echo $paypalHelper->consoleLog('err', 'PLG_BFPAYPALADVANCED_PAYMENTERROR'); ?>
+                            enablePayButton();
                         });
                     });
                 });

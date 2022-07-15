@@ -9,6 +9,7 @@
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Uri\Uri;
 
 defined('_JEXEC') or die('Restricted access');
 
@@ -57,8 +58,17 @@ Factory::getDocument()->addStyleSheet('https://www.paypalobjects.com/webstatic/e
 
         <br/><br/>
 
-        <button value="submit" id="card-submit" class="hikabtn hikacart">
-			<?php echo Text::_('PLG_BFPAYPALADVANCED_PAYWITHCARD'); ?>
-        </button>
+        <div>
+            <button value="submit"
+                    id="bfpaypaladvanced-card-submit"
+                    class="hikabtn hikacart">
+                <img src="<?php echo Uri::root() . 'media/com_hikashop/images/spinner.gif'; ?>"
+                     style="visibility:hidden;"/>
+				<?php echo Text::_('PLG_BFPAYPALADVANCED_PAYWITHCARD'); ?>
+                <img id="bfpaypaladvanced-card-submit-busy"
+                     src="<?php echo Uri::root() . 'media/com_hikashop/images/spinner.gif'; ?>"
+                     style="visibility:hidden;"/>
+            </button>
+        </div>
     </form>
 </div>
