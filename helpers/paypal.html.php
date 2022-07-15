@@ -14,11 +14,6 @@ use Joomla\CMS\Uri\Uri;
 defined('_JEXEC') or die('Restricted access');
 
 Factory::getDocument()->addStyleSheet('https://www.paypalobjects.com/webstatic/en_US/developer/docs/css/cardfields.css');
-
-// TODO
-/** @var plgHikashoppaymentBfpaypaladvancedHelper $paypalHelper */
-//$addressInfo = $paypalHelper->getAddressInfo('billing');
-//$addressInfo['country_code'] = 'IE';
 ?>
 <div class="card_container">
     <form id="bfpaypaladvanced-card-form">
@@ -43,31 +38,15 @@ Factory::getDocument()->addStyleSheet('https://www.paypalobjects.com/webstatic/e
                placeholder="<?php echo Text::_('PLG_BFPAYPALADVANCED_NAMEONCARD_PLACEHOLDER'); ?>"
         />
 
-        <?php
-        /* TODO
-        ?>
-        <label for="card-billing-address-country"><?php echo Text::_('PLG_BFPAYPALADVANCED_COUNTRYCODE'); ?></label>
-        <input type="text"
-               id="card-billing-address-country"
-               name="card-billing-address-country"
-               autocomplete="off"
-               value="<?php echo $addressInfo['country_code']; ?>"
-        />
-        */
-        ?>
-
-        <br/><br/>
-
-        <div>
+        <div id="bfpaypaladvanced-card-submit">
             <button value="submit"
-                    id="bfpaypaladvanced-card-submit"
-                    class="hikabtn hikacart">
-                <img src="<?php echo Uri::root() . 'media/com_hikashop/images/spinner.gif'; ?>"
-                     style="visibility:hidden;"/>
+                    id="bfpaypaladvanced-card-submitbtn"
+                    class="hikabtn hikacart"
+                    style="position:relative;">
 				<?php echo Text::_('PLG_BFPAYPALADVANCED_PAYWITHCARD'); ?>
-                <img id="bfpaypaladvanced-card-submit-busy"
-                     src="<?php echo Uri::root() . 'media/com_hikashop/images/spinner.gif'; ?>"
-                     style="visibility:hidden;"/>
+                <img id="bfpaypaladvanced-card-submitbtn-busy"
+                     src="<?php echo Uri::root() . '/plugins/hikashoppayment/bfpaypaladvanced/images/spinner.gif'; ?>"
+                     style="position:absolute;right:1em;display:none;height:25px;"/>
             </button>
         </div>
     </form>

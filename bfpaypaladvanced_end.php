@@ -32,12 +32,13 @@ if (strpos($this->plugin_params->return_url, 'PLG_BFPAYPALADVANCED_RETURNURL') =
 
     $cancelUrl = $this->getNotifyUrl('cancel');
     ?>
-    <div id="bfpaypaladvanced-cancel">
-        <a class="hikabtn hikacart"
-           href="<?php echo $cancelUrl; ?>"
+    <div id="bfpaypaladvanced-cancelbtn">
+        <button class="hikabtn hikacart"
+                href="<?php echo $cancelUrl; ?>"
+                style="width:fit-content";
         >
             <?php echo Text::_('PLG_BFPAYPALADVANCED_CANCEL_ORDER'); ?>
-        </a>
+        </button>
     </div>
 
 	<?php
