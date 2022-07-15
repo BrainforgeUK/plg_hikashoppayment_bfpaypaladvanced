@@ -7,8 +7,10 @@
  * @license   GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
  */
 
+use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Router\Route;
 use Joomla\CMS\Uri\Uri;
 
 defined('_JEXEC') or die('Restricted access');
@@ -20,6 +22,10 @@ class plgHikashoppaymentBfpaypaladvanced extends hikashopPaymentPlugin
 	var $pluginConfig = array(
 		'client_id' 			=> array("PLG_BFPAYPALADVANCED_CLIENTID", 'input'),
 		'client_secret'			=> array("PLG_BFPAYPALADVANCED_SECRET",   'input'),
+		'sca_required'			=> array("PLG_BFPAYPALADVANCED_SCA", 'radio',
+														array('1' => 'PLG_BFPAYPALADVANCED_ALWAYS', '0' => 'PLG_BFPAYPALADVANCED_WHEN_REQUIRED', )),
+		'shiftliability' 		=> array('PLG_BFPAYPALADVANCED_SHIFTLIABILITY', 'radio',
+														array('1' => 'PLG_BFPAYPALADVANCED_IFPOSSIBLE', '0' => 'PLG_BFPAYPALADVANCED_WITH_MERCHANT', )),
 		'sandbox' 				=> array('SANDBOX', 'radio',
 														array('1' => 'HIKASHOP_YES', '0' => 'HIKASHOP_NO', )),
 		'order_status' 			=> array('ORDER_STATUS',    'orderstatus'),
@@ -143,6 +149,8 @@ class plgHikashoppaymentBfpaypaladvanced extends hikashopPaymentPlugin
 		$element->payment_description=Text::_('PLG_BFPAYPALADVANCED_DESCRIPTION');
 		$element->payment_images='PayPal';
 
+		$element->payment_params->sca_required = '1';
+		$element->payment_params->shiftliability = '1';
 		$element->payment_params->sandbox = '0';
 		$element->payment_params->order_status = 'created';
 		$element->payment_params->paid_status = 'confirmed';
@@ -204,38 +212,60 @@ class plgHikashoppaymentBfpaypaladvanced extends hikashopPaymentPlugin
 
 		switch($action)
 		{
+			case 'createorder':
+				$order = new stdClass();
+				$order->id = plgHikashoppaymentBfpaypaladvancedHelper::doCreateOrder($this);
+
+				echo json_encode($order);
+				exit(0);
+
 			case 'capture':
-				$captureResult = plgHikashoppaymentBfpaypaladvancedHelper::doCapture($this);
-				if (empty($captureResult))
+				$output = new stdClass();
+				$output->message = Text::_('PLG_BFPAYPALADVANCED_CAPTUREERROR');
+				$output->status = '0';
+
+				$payload = json_decode(base64_decode($this->app->input->getBase64('payload')), true);
+
+				if (!plgHikashoppaymentBfpaypaladvancedHelper::process3DResponse($this->plugin_params, $payload))
 				{
-					echo json_encode('');
+					$output->message = Text::_('PLG_BFPAYPALADVANCED_AUTHDENIEDUSEDANOTHER');
+					echo json_encode($output);
 					exit(0);
 				}
 
-				if (is_object($captureResult))
+				$captureResult = plgHikashoppaymentBfpaypaladvancedHelper::doCapture($this);
+				if (empty($captureResult))
+				{
+					echo json_encode($output);
+					exit(0);
+				}
+
+				if (is_object($captureResult))	// Must be an error, normally a JSON string
 				{
 					if ($this->plugin_params->debug)
 					{
-						echo json_encode($captureResult);
-						exit(0);
+						$output->result = $captureResult;
 					}
 
-					echo json_encode('');
+					echo json_encode($output);
 					exit(0);
 				}
 
 				$result = json_decode($captureResult, true);
 				if (empty($result))
 				{
-					$this->returnNotificationError('008');
+					$this->returnNotificationError('010');
 				}
 
-				if ($result['intent'] == 'CAPTURE' && $result['status'] == 'COMPLETED')
+				$result['payload'] = $payload;
+
+				$transaction = @$result['purchase_units'][0]['payments']['captures'][0];
+
+				if (@$result['status'] == 'COMPLETED' &&
+					!empty($transaction && $transaction['status'] == 'COMPLETED'))
 				{
 					$this->app->setUserState('plghikashoppayment.bfpaypaladvanced.secretkey', null);
 					$this->app->setUserState('plghikashoppayment.bfpaypaladvanced.cartorder', null);
-
-					$transaction = $captureResult['purchase_units'][0];
 
 					$history = new stdClass();
 					$history->amount = $transaction['amount']['value'];
@@ -243,16 +273,40 @@ class plgHikashoppaymentBfpaypaladvanced extends hikashopPaymentPlugin
 					$history->notified = 1;
 
 					$this->modifyOrder($this->order->order_id,
-										$this->plugin_params->paid_status,
-										$history,
-										$this->plugin_params->status_notif_email,
-										$this->plugin_params);
+						$this->plugin_params->paid_status,
+						$history,
+						$this->plugin_params->status_notif_email,
+						$this->plugin_params);
 
 					$cartClass = hikashop_get('class.cart');
 					$cartClass->cleanCartFromSession(false, true);
+
+					$output->message = Text::sprintf('PLG_BFPAYPALADVANCE_ORDERCOMPLETED', $this->order->order_number);
+
+					if (empty($this->plugin_params->return_url))
+					{
+						$output->status = '1';
+					}
+					else
+					{
+						$output->status = '2';
+
+						$this->app->enqueueMessage($output->message);
+						Factory::getSession()->set('application.queue', $this->app->getMessageQueue(true));
+
+						$output->message = '';
+						$output->url = Route::_(($this->plugin_params->return_url));
+					}
+				}
+				else if ($result['name'] == 'UNPROCESSABLE_ENTITY')
+				{
+					$output->status = '-1';
+					$output->message = $result['message'];
+					$output->result = $result;
 				}
 
-				echo $captureResult;
+				echo json_encode($output);
+
 				exit(0);
 
 			case 'cancel':
@@ -302,7 +356,12 @@ class plgHikashoppaymentBfpaypaladvanced extends hikashopPaymentPlugin
 				$this->plugin_params);
 		}
 
-		die($history->data);
+		$output = new stdClass();
+		$output->status = 0;
+		$output->message = $history->data;
+
+		echo json_encode($output);
+		exit(0);
 	}
 
 	/*
@@ -316,6 +375,21 @@ class plgHikashoppaymentBfpaypaladvanced extends hikashopPaymentPlugin
 				{
 					$transaction = $data['purchase_units'][0]['payments']['captures'][0];
 					$history->history_data = Text::sprintf('PLG_BFPAYPALADVANCED_ORDERHISTORY_TRANSACTIONID', $transaction['status'], $transaction['id']) . '<br/>';
+
+					if (!empty($data['payment_source']['card']['last_digits']))
+					{
+						$history->history_data .= Text::sprintf('PLG_BFPAYPALADVANCED_ORDERHISTORY_LASTDIGITS',
+							$data['payment_source']['card']['last_digits']) . '<br/>';
+					}
+
+					if (@$data['payload']['liabilityShifted'])
+					{
+						$history->history_data .= Text::_('PLG_BFPAYPALADVANCED_LIABILITYSHIFTED') . '<br/>';
+					}
+					else
+					{
+						$history->history_data .= Text::_('PLG_BFPAYPALADVANCED_LIABILITYNOTSHIFTED') . '<br/>';
+					}
 
 					if ($transaction['final_capture'])
 					{

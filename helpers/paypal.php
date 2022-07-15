@@ -44,7 +44,6 @@ class plgHikashoppaymentBfpaypaladvancedHelper
 
 				$paypalHelper->paypal_params->accessToken = $paypalHelper->createToken();
 				$paypalHelper->paypal_params->clientToken = $paypalHelper->createClientToken();
-				$paypalHelper->paypal_params->orderId     = $paypalHelper->createOrder();
 
 				$paypalHelper->paypal_params->status = true;
 
@@ -64,7 +63,7 @@ class plgHikashoppaymentBfpaypaladvancedHelper
 
 	/*
 	 */
-	public static function doCapture($plugin)
+	public static function doCreateOrder($plugin)
 	{
 		try
 		{
@@ -82,7 +81,65 @@ class plgHikashoppaymentBfpaypaladvancedHelper
 			return false;
 		}
 
-		return $paypalHelper->capturePaymentForOrder();
+		$paypalHelper->paypal_params->orderId = $paypalHelper->createOrder();
+		$plugin->app->setUserState('plghikashoppayment.bfpaypaladvanced.paypal_params', $paypalHelper->paypal_params);
+
+		return $paypalHelper->paypal_params->orderId;
+	}
+
+	/*
+	 */
+	public static function process3DResponse($plugin_params, $payload)
+	{
+		if ($plugin_params->shiftliability)
+		{
+			return (!empty($payload['liabilityShifted']) && $payload['liabilityShifted'] == 'POSSIBLE');
+		}
+
+		return !$plugin_params->sca_required;
+	}
+
+	/*
+	 */
+	public function get3DSecureContingency()
+	{
+		switch($this->plugin_params->sca_required)
+		{
+			case 1:
+				return 'SCA_ALWAYS';
+			case 0:
+			default:
+				return 'SCA_WHEN_REQUIRED';
+		}
+	}
+
+	/*
+	 */
+	public static function doCapture($plugin)
+	{
+		try
+		{
+			$paypalHelper = new plgHikashoppaymentBfpaypaladvancedHelper($plugin);
+
+			$paypalHelper->paypal_params = $plugin->app->getUserState('plghikashoppayment.bfpaypaladvanced.paypal_params');
+			if (empty($paypalHelper->paypal_params->status))
+			{
+				return false;
+			}
+
+			if (empty($paypalHelper->paypal_params->orderId))
+			{
+				throw new Exception(Text::sprintf('PLG_BFPAYPALADVANCED_ERROR', '031'));
+			}
+		}
+		catch (Exception $e)
+		{
+			$response = new stdClass();
+			$response->bfErrorMessage = $e->getMessage();
+			return $response;
+		}
+
+		return $paypalHelper->paypalOrder($paypalHelper->paypal_params->orderId . '/capture', []);
 	}
 
 	/*
@@ -90,38 +147,30 @@ class plgHikashoppaymentBfpaypaladvancedHelper
 	protected function createToken()
 	{
 		$url = 'https://' . $this->getPayPalApiUrl() . '/v1/oauth2/token';
-		$ch = $this->curlInit($url);
+		$ch = $this->curlInit($url, true);
 
 		//Set the required headers
-		$headers = array(
-			'Accept: application/json',
-			'Content-Type: application/x-www-form-urlencoded',
-			'Accept-Language: en_US',
-			'PayPal-Partner-Attribution-Id: ' . $this->paypal_params->bnCode,
-		);
+		$headers = $this->getHeaders(true);
 		curl_setopt($ch,CURLOPT_HTTPHEADER, $headers);
 
-		//Specify that we want access credentials returned
 		$vars['grant_type'] = 'client_credentials';
 
 		//build and set the request
 		$req = http_build_query($vars);
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $req);
 
-		//get the response back
 		$response = curl_exec($ch);
 		if (empty($response))
 		{
 			throw new Exception(Text::sprintf('PLG_BFPAYPALADVANCED_ERROR', '001'));
 		}
 
-		//parse json into php array
-		$outArray = json_decode($response, true);
-
 		//Close the connection
 		curl_close($ch);
 
-        if (empty($outArray['access_token']))
+		$outArray = json_decode($response, true);
+
+		if (empty($outArray['access_token']))
 		{
             echo '<pre>';
 			print_r($outArray);
@@ -146,13 +195,7 @@ class plgHikashoppaymentBfpaypaladvancedHelper
 		$ch = $this->curlInit($url);
 
 		//Set the required headers
-		$headers = array(
-			'Accept: application/json',
-			'Content-Type: application/json',
-			'Accept-Language: en_US',
-			'Authorization: Bearer ' . $this->paypal_params->accessToken
-
-		);
+		$headers = $this->getHeaders();
 		curl_setopt($ch,CURLOPT_HTTPHEADER, $headers);
 
 		$vars = [];
@@ -161,20 +204,17 @@ class plgHikashoppaymentBfpaypaladvancedHelper
 
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $json);
 
-        //get the response back
 		$response = curl_exec($ch);
 		if (empty($response))
 		{
 			throw new Exception(Text::sprintf('PLG_BFPAYPALADVANCED_ERROR', '012'));
 		}
 
-        //parse json into php array
-		$outArray = json_decode($response, true);
-
-        //Close the connection
 		curl_close($ch);
 
-        if (empty($outArray['client_token']))
+		$outArray = json_decode($response, true);
+
+		if (empty($outArray['client_token']))
 		{
 			echo '<pre>';
 			print_r($outArray);
@@ -199,20 +239,19 @@ class plgHikashoppaymentBfpaypaladvancedHelper
 		$ch = $this->curlInit($url);
 
 		//Set the required headers
-		$headers = array(
-			'Accept: application/json',
-			'Content-Type: application/json',
-			'Accept-Language: en_US',
-			'Authorization: Bearer ' . $this->paypal_params->accessToken,
-			'PayPal-Partner-Attribution-Id: ' . $this->paypal_params->bnCode,
-		);
+		$headers = $this->getHeaders();
 		curl_setopt($ch,CURLOPT_HTTPHEADER, $headers);
 
 		$amount = [];
+		if (is_string($this->order->order_currency_info))
+		{
+			$this->order->order_currency_info = unserialize($this->order->order_currency_info);
+		}
 		$amount['currency_code'] = $this->order->order_currency_info->currency_code;
-		$amount['value'] = $this->order->order_full_price;
+		$amount['value'] = sprintf('%0.2f', $this->order->order_full_price);
 
 		$purchase_units = [];
+		$purchase_units['invoice_id'] = $this->order->order_number;
 		$purchase_units['amount'] = $amount;
 
 		$vars = [];
@@ -223,18 +262,15 @@ class plgHikashoppaymentBfpaypaladvancedHelper
 
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $json);
 
-		//get the response back
 		$response = curl_exec($ch);
 		if (empty($response))
 		{
 			throw new Exception(Text::sprintf('PLG_BFPAYPALADVANCED_ERROR', '022'));
 		}
 
-		//parse json into php array
-		$outArray = json_decode($response, true);
-
-		//Close the connection
 		curl_close($ch);
+
+		$outArray = json_decode($response, true);
 
 		if (empty($outArray['id']))
 		{
@@ -250,28 +286,21 @@ class plgHikashoppaymentBfpaypaladvancedHelper
 
 	/*
 	 */
-	protected function capturePaymentForOrder()
+	protected function paypalOrder($action='', $post=null)
 	{
-		if (empty($this->paypal_params->orderId))
-		{
-			throw new Exception(Text::sprintf('PLG_BFPAYPALADVANCED_ERROR', '031'));
-		}
-
-		$url = 'https://' . $this->getPayPalApiUrl() . '/v2/checkout/orders/' . $this->paypal_params->orderId . '/capture';
+		$url = 'https://' . $this->getPayPalApiUrl() . '/v2/checkout/orders/' . $action;
 		$ch = $this->curlInit($url);
 
 		//Set the required headers
-		$headers = array(
-			'Accept: application/json',
-			'Content-Type: application/json',
-			'Accept-Language: en_US',
-			'Authorization: Bearer ' . $this->paypal_params->accessToken,
-			//'PayPal-Request-Id: 7b92603e-77ed-4896-8e78-5dea2050476a',
-			'PayPal-Partner-Attribution-Id: ' . $this->paypal_params->bnCode,
-		);
+		$headers = $this->getHeaders();
 		curl_setopt($ch,CURLOPT_HTTPHEADER, $headers);
 
-		//get the response back
+		if (is_array($post))
+		{
+			curl_setopt($ch, CURLOPT_POST, TRUE);
+			curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
+		}
+
 		$response = curl_exec($ch);
 		$info = curl_getinfo($ch);
 
@@ -290,7 +319,7 @@ class plgHikashoppaymentBfpaypaladvancedHelper
 
 	/*
 	 */
-	protected function curlInit($url)
+	protected function curlInit($url, $withUserPwd=false)
 	{
 		//Initiate CURL and set the url endpoint
 		$ch = curl_init();
@@ -303,8 +332,11 @@ class plgHikashoppaymentBfpaypaladvancedHelper
 			curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
 		}
 
-		//Set the user and password
-		curl_setopt($ch, CURLOPT_USERPWD, $this->paypal_params->userpwd);
+		if ($withUserPwd)
+		{
+			//Set the user and password
+			curl_setopt($ch, CURLOPT_USERPWD, $this->paypal_params->userpwd);
+		}
 
 		//Keep connection open until we get data back
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
@@ -321,17 +353,6 @@ class plgHikashoppaymentBfpaypaladvancedHelper
 
 	/*
 	 */
-	public function onOrderCompleted()
-	{
-		$message = Text::sprintf('PLG_BFPAYPALADVANCED_ORDERCOMPLETED', $this->order->order_number);
-
-		$message = str_replace("'", "&#39;", $message);
-
-		return "document.getElementById('bfpaypaladvanced-end').innerHTML = '${message}';";
-	}
-
-	/*
-	 */
 	public function getNotifyUrl($action)
 	{
 		return $this->plugin->getNotifyUrl($action);
@@ -343,14 +364,14 @@ class plgHikashoppaymentBfpaypaladvancedHelper
 	{
 		$result = [];
 
-		if (!empty($alert))
-		{
-			$result[] = 'alert("' . str_replace('"', '\\"', Text::_($alert)) .'");';
-		}
-
 		if ($this->plugin_params->debug && !empty($log))
 		{
 			$result[] = 'console.log(' . implode(',', (array)$log) . ');';
+		}
+
+		if (!empty($alert))
+		{
+			$result[] = 'alert("' . str_replace('"', '\\"', Text::_($alert)) .'");';
 		}
 
 		return implode("\n", $result);
@@ -408,5 +429,33 @@ class plgHikashoppaymentBfpaypaladvancedHelper
 		}
 
 		return $result;
+	}
+
+	/*
+	 */
+	protected function getHeaders($createToken=false)
+	{
+		$headers = array(
+			'Accept: application/json',
+			'Accept-Language: en_US',
+		);
+
+		if ($createToken || empty($this->paypal_params->accessToken))
+		{
+			$headers[] = 'Content-Type: application/x-www-form-urlencoded';
+
+		}
+		else
+		{
+			$headers[] = 'Content-Type: application/json';
+			$headers[] = 'Authorization: Bearer ' . $this->paypal_params->accessToken;
+		}
+
+		if (!empty($this->paypal_params->bnCode))
+		{
+			$headers[] = 'PayPal-Partner-Attribution-Id: ' . $this->paypal_params->bnCode;
+		}
+
+		return $headers;
 	}
 }

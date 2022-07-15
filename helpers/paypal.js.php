@@ -25,7 +25,7 @@ $jsArgs[] = 'intent=capture';
     <?php include __DIR__ . '/paypal.html.php'; ?>
 
     <script>
-        let orderId = "<?php echo $paypalHelper->paypal_params->orderId; ?>";
+        let orderId = "";
 
         function initCardForm() {
             if (!paypal.HostedFields.isEligible()) {
@@ -37,9 +37,15 @@ $jsArgs[] = 'intent=capture';
 
             // Renders card fields
             paypal.HostedFields.render({
-                // https://developer.paypal.com/sdk/js/reference/#link-paypalhostedfields
                 createOrder: function () {
-                    return orderId;
+                    return fetch('<?php echo $paypalHelper->getNotifyUrl('createorder'); ?>')
+                        .then((res) => res.json())
+                        .then((orderData) => {
+                            orderId = orderData.id;
+                            return orderData.id;
+                    }).catch(function (err) {
+                        <?php echo $paypalHelper->consoleLog('err', 'PLG_BFPAYPALADVANCED_ORDERERROR'); ?>
+                    });
                 },
 
                 styles: {
@@ -68,71 +74,48 @@ $jsArgs[] = 'intent=capture';
                     }
                 }
 
-            }).then(function (cardFields) {
-                document.querySelector("#card-form").addEventListener('submit', (event) => {
+            }).then(function (hf) {
+                document.querySelector('#card-form').addEventListener('submit', (event) => {
+
                     event.preventDefault();
 
-                    cardFields.submit({
-                        // Cardholder's first and last name
-                        cardholderName: document.getElementById('card-holder-name').value,
-                        <?php
-                        /* TODO
-                        // Billing Address
-                        billingAddress: {
-                            countryCodeAlpha2: document.getElementById('card-billing-address-country').value
-                        }
-                        */
-                        ?>
-                    }).then(function () {
-                        fetch('<?php echo $paypalHelper->getNotifyUrl('capture'); ?>'
+                    hf.submit({
+                        // Trigger 3D Secure authentication
+                        contingencies: ['<?php echo $paypalHelper->get3DSecureContingency(); ?>'],
+                    }).then(function (payload) {
+                        fetch('<?php echo $paypalHelper->getNotifyUrl('capture'); ?>&payload=' + btoa(JSON.stringify(payload))
                         ).then(function(res) {
                             return res.json();
-                        }).then(function (orderData) {
-                            if (orderData.bfErrorMessage)
+                        }).then(function (response) {
+                            switch(response.status)
                             {
-                                <?php echo $paypalHelper->consoleLog('orderData.bfErrorMessage', 'PLG_BFPAYPALADVANCED_CAPTUREERROR'); ?>
-                                return null;
+                                case '-1':
+                                    if (response.result)
+                                    {
+                                        console.log(response.result);
+                                    }
+                                    alert(response.message);
+                                    break;
+                                case '0':
+                                    alert(response.message);
+                                    break;
+                                case '1':
+                                    document.getElementById('bfpaypalstandard-end').innerHTML = response.message;
+                                    break;
+                                case '2':
+                                    window.location.href = response.url;
+                                    break;
+                                default:
+                            		<?php echo $paypalHelper->consoleLog(null, 'PLG_BFPAYPALADVANCED_PAYMENTERROR'); ?>
+                                    break;
                             }
-
-                            if(!orderData.details)
-                            {
-                                <?php echo $paypalHelper->consoleLog(null, 'PLG_BFPAYPALADVANCED_CAPTUREINVALID'); ?>
-                                return null;
-                            }
-
-                            // Three cases to handle:
-                            //   (1) Recoverable INSTRUMENT_DECLINED -> call actions.restart()
-                            //   (2) Other non-recoverable errors -> Show a failure message
-                            //   (3) Successful transaction -> Show confirmation or thank you
-
-                            // Read a v2/checkout/orders capture response, propagated from the server
-                            var errorDetail = Array.isArray(orderData.details) && orderData.details[0];
-
-                            if (errorDetail && errorDetail.issue === 'INSTRUMENT_DECLINED') {
-                                return actions.restart(); // Recoverable state, per:
-                                // https://developer.paypal.com/docs/checkout/integration-features/funding-failure/
-                            }
-
-                            if (errorDetail) {
-                                var msg = '<?php Text::_('PLG_BFPAYPALADVANCED_PAYMENTNOTPROCESSED'); ?>';
-                                if (errorDetail.description) msg += '\n\n' + errorDetail.description;
-                                if (orderData.debug_id) msg += ' (' + orderData.debug_id + ')';
-                                alert(msg);
-                                return null;
-                            }
-
-                            // Show a success message or redirect
-                            alert('Transaction completed!');
-                            <?php echo $paypalHelper->onOrderCompleted(); ?>
                         }).catch(function (err) {
                             <?php echo $paypalHelper->consoleLog('err', 'PLG_BFPAYPALADVANCED_PAYMENTERROR'); ?>
                         });
-                    }).catch(function (err) {
-                            <?php echo $paypalHelper->consoleLog('err', 'PLG_BFPAYPALADVANCED_PAYMENTERROR'); ?>
                     });
                 });
             });
-        }
+        };
 
         initCardForm();
     </script>

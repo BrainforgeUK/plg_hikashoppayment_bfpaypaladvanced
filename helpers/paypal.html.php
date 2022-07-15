@@ -57,6 +57,8 @@ Factory::getDocument()->addStyleSheet('https://www.paypalobjects.com/webstatic/e
 
         <br/><br/>
 
-        <button value="submit" id="submit" class="btn">Pay</button>
+        <button value="submit" id="card-submit" class="hikabtn hikacart">
+			<?php echo Text::_('PLG_BFPAYPALADVANCED_PAYWITHCARD'); ?>
+        </button>
     </form>
 </div>
