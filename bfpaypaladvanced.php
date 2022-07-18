@@ -262,7 +262,7 @@ class plgHikashoppaymentBfpaypaladvanced extends hikashopPaymentPlugin
 				$transaction = @$result['purchase_units'][0]['payments']['captures'][0];
 
 				if (@$result['status'] == 'COMPLETED' &&
-					!empty($transaction && $transaction['status'] == 'COMPLETED'))
+					!empty($transaction) && $transaction['status'] == 'COMPLETED')
 				{
 					$this->app->setUserState('plghikashoppayment.bfpaypaladvanced.secretkey', null);
 					$this->app->setUserState('plghikashoppayment.bfpaypaladvanced.cartorder', null);
