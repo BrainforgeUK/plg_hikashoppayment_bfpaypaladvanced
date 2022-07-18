@@ -29,16 +29,22 @@ $jsArgs[] = 'intent=capture';
 
         function enablePayButton()
         {
-            document.getElementById('bfpaypaladvanced-card-submitbtn').disabled = '';
-            document.getElementById('bfpaypaladvanced-card-submitbtn').classList.remove("submitted");
-            document.getElementById('bfpaypaladvanced-card-submitbtn-busy').style.display = 'none';
+            var submitbtn = document.getElementById('bfpaypaladvanced-card-submitbtn');
+            if (submitbtn) {
+                submitbtn.disabled = '';
+                submitbtn.classList.remove("submitted");
+                document.getElementById('bfpaypaladvanced-card-submitbtn-busy').style.display = 'none';
+            }
         }
 
         function disablePayButton()
         {
-            document.getElementById('bfpaypaladvanced-card-submitbtn').disabled = 'disabled';
-            document.getElementById('bfpaypaladvanced-card-submitbtn').classList.add("submitted");
-            document.getElementById('bfpaypaladvanced-card-submitbtn-busy').style.display = '';
+            var submitbtn = document.getElementById('bfpaypaladvanced-card-submitbtn');
+            if (submitbtn) {
+                submitbtn.disabled = 'disabled';
+                submitbtn.classList.add("submitted");
+                document.getElementById('bfpaypaladvanced-card-submitbtn-busy').style.display = '';
+            }
         }
 
         function initCardForm() {
