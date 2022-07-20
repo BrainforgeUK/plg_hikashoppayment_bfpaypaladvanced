@@ -9,8 +9,6 @@
 
 use Joomla\CMS\Factory;
 
-/** @var object $plugin */
-
 defined('_JEXEC') or die('Restricted access');
 
 Factory::getDocument()->addStyleSheet('https://www.paypalobjects.com/webstatic/en_US/developer/docs/css/cardfields.css');

@@ -8,7 +8,6 @@
  */
 
 use Joomla\CMS\Factory;
-use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Uri\Uri;
@@ -26,6 +25,8 @@ class plgHikashoppaymentBfpaypaladvanced extends hikashopPaymentPlugin
 														array('1' => 'PLG_BFPAYPALADVANCED_ALWAYS', '0' => 'PLG_BFPAYPALADVANCED_WHEN_REQUIRED', )),
 		'shiftliability' 		=> array('PLG_BFPAYPALADVANCED_SHIFTLIABILITY', 'radio',
 														array('1' => 'PLG_BFPAYPALADVANCED_IFPOSSIBLE', '0' => 'PLG_BFPAYPALADVANCED_WITH_MERCHANT', )),
+		'usecardholderaddress'	=> array('PLG_BFPAYPALADVANCED_USECARDHOLDERADDRESS', 'radio',
+														array('1' => 'HIKASHOP_YES', '0' => 'HIKASHOP_NO', )),
 		'sandbox' 				=> array('SANDBOX', 'radio',
 														array('1' => 'HIKASHOP_YES', '0' => 'HIKASHOP_NO', )),
 		'order_status' 			=> array('ORDER_STATUS',    'orderstatus'),
@@ -151,6 +152,7 @@ class plgHikashoppaymentBfpaypaladvanced extends hikashopPaymentPlugin
 
 		$element->payment_params->sca_required = '1';
 		$element->payment_params->shiftliability = '1';
+		$element->payment_params->usecardholderaddress = '1';
 		$element->payment_params->sandbox = '0';
 		$element->payment_params->order_status = 'created';
 		$element->payment_params->paid_status = 'confirmed';

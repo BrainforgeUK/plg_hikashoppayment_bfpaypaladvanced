@@ -11,6 +11,7 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\Uri\Uri;
 
 /** @var object $plugin */
+/** @var object $paypalHelper */
 
 defined('_JEXEC') or die('Restricted access');
 ?>
@@ -49,72 +50,78 @@ $billing_address = $plugin->order->cart->billing_address;
     .card-billing-address-wrap .chzn-single { height: 40px; padding: 5px; }
 </style>
 
-<div id="card-billing-address-wrap" class="card-billing-address-wrap">
-    <div id="card-billing-address-wrap-street">
-        <label for="card-billing-address-street"><?php echo Text::_('PLG_BFPAYPALADVANCED_CARDHOLDERADDRESS'); ?></label>
-        <input type="text" id="card-billing-address-street"
-               name="card-billing-address-street"
-               autocomplete="off"
-               value="<?php echo htmlentities($billing_address->address_street); ?>"
-               placeholder="<?php echo Text::_('PLG_BFPAYPALADVANCED_ADDRESS_PLACEHOLDER'); ?>"
+<?php
+if ($paypalHelper->plugin->plugin_params->usecardholderaddress) {
+    ?>
+    <div id="card-billing-address-wrap" class="card-billing-address-wrap">
+        <div id="card-billing-address-wrap-street">
+            <label for="card-billing-address-street"><?php echo Text::_('PLG_BFPAYPALADVANCED_CARDHOLDERADDRESS'); ?></label>
+            <input type="text" id="card-billing-address-street"
+                   name="card-billing-address-street"
+                   autocomplete="off"
+                   value="<?php echo htmlentities($billing_address->address_street); ?>"
+                   placeholder="<?php echo Text::_('PLG_BFPAYPALADVANCED_ADDRESS_PLACEHOLDER'); ?>"
+        </div>
+
+        <div id="card-billing-address-wrap-unit">
+            <input type="text"
+                   id="card-billing-address-unit"
+                   name="card-billing-address-unit"
+                   autocomplete="off"
+                   value="<?php echo htmlentities(@$billing_address->address_street2); ?>"
+                   placeholder="<?php echo Text::_('PLG_BFPAYPALADVANCED_UNIT_PLACEHOLDER'); ?>"
+        </div>
+
+        <div id="card-billing-address-wrap-city">
+            <input type="text"
+                   id="card-billing-address-city"
+                   name="card-billing-address-city"
+                   autocomplete="off"
+                   value="<?php echo htmlentities($billing_address->address_city); ?>"
+                   placeholder="<?php echo Text::_('PLG_BFPAYPALADVANCED_CITY_PLACEHOLDER'); ?>"
+        </div>
+
+        <div id="card-billing-address-wrap-state">
+            <input type="text"
+                   id="card-billing-address-state"
+                   name="card-billing-address-state"
+                   autocomplete="off"
+                   value="<?php echo htmlentities(@$zoneClass->getZones(array(@$billing_address->address_state[0]),
+                                                                   'zone_name_english', 'zone_namekey', true)[0]); ?>"
+                   placeholder="<?php echo Text::_('PLG_BFPAYPALADVANCED_STATE_PLACEHOLDER'); ?>"
+        </div>
+
+        <div id="card-billing-address-wrap-zip">
+            <input type="text"
+                   id="card-billing-address-zip"
+                   name="card-billing-address-zip"
+                   autocomplete="off"
+                   value="<?php echo htmlentities($billing_address->address_post_code); ?>"
+                   placeholder="<?php echo Text::_('PLG_BFPAYPALADVANCED_ZIP_PLACEHOLDER'); ?>"
+        </div>
+
+        <div id="card-billing-address-wrap-country">
+            <?php
+            $countries = $zoneClass->getZones(array('country'), 'zone_code_2, zone_name_english', 'zone_type');
+            usort($countries, function($a, $b)
+            {
+                return strcmp($a->zone_name_english, $b->zone_name_english);
+            });
+
+            $options = array('' => Text::_('PLG_BFPAYPALADVANCED_COUNTRY_PLACEHOLDER'));
+            foreach($countries as $country)
+            {
+                $options[] = JHTML::_('select.option', $country->zone_code_2, $country->zone_name_english);
+            }
+
+            echo JHTML::_('select.genericlist', $options, 'card-billing-address-country', '', 'value','text',
+                @$zoneClass->getZones(array(@$billing_address->address_country[0]), 'zone_code_2', 'zone_namekey', true)[0]);
+            ?>
+        </div>
     </div>
-
-    <div id="card-billing-address-wrap-unit">
-        <input type="text"
-               id="card-billing-address-unit"
-               name="card-billing-address-unit"
-               autocomplete="off"
-               value="<?php echo htmlentities(@$billing_address->address_street2); ?>"
-               placeholder="<?php echo Text::_('PLG_BFPAYPALADVANCED_UNIT_PLACEHOLDER'); ?>"
-    </div>
-
-    <div id="card-billing-address-wrap-city">
-        <input type="text"
-               id="card-billing-address-city"
-               name="card-billing-address-city"
-               autocomplete="off"
-               value="<?php echo htmlentities($billing_address->address_city); ?>"
-               placeholder="<?php echo Text::_('PLG_BFPAYPALADVANCED_CITY_PLACEHOLDER'); ?>"
-    </div>
-
-    <div id="card-billing-address-wrap-state">
-        <input type="text"
-               id="card-billing-address-state"
-               name="card-billing-address-state"
-               autocomplete="off"
-               value="<?php echo htmlentities(@$zoneClass->getZones(array(@$billing_address->address_state[0]),
-                                                               'zone_name_english', 'zone_namekey', true)[0]); ?>"
-               placeholder="<?php echo Text::_('PLG_BFPAYPALADVANCED_STATE_PLACEHOLDER'); ?>"
-    </div>
-
-    <div id="card-billing-address-wrap-zip">
-        <input type="text"
-               id="card-billing-address-zip"
-               name="card-billing-address-zip"
-               autocomplete="off"
-               value="<?php echo htmlentities($billing_address->address_post_code); ?>"
-               placeholder="<?php echo Text::_('PLG_BFPAYPALADVANCED_ZIP_PLACEHOLDER'); ?>"
-    </div>
-
-    <div id="card-billing-address-wrap-country">
-        <?php
-        $countries = $zoneClass->getZones(array('country'), 'zone_code_2, zone_name_english', 'zone_type');
-        usort($countries, function($a, $b)
-		{
-            return strcmp($a->zone_name_english, $b->zone_name_english);
-        });
-
-        $options = array('' => Text::_('PLG_BFPAYPALADVANCED_COUNTRY_PLACEHOLDER'));
-        foreach($countries as $country)
-		{
-			$options[] = JHTML::_('select.option', $country->zone_code_2, $country->zone_name_english);
-		}
-
-        echo JHTML::_('select.genericlist', $options, 'card-billing-address-country', '', 'value','text',
-			@$zoneClass->getZones(array(@$billing_address->address_country[0]), 'zone_code_2', 'zone_namekey', true)[0]);
-        ?>
-    </div>
-</div>
+    <?php
+}
+?>
 
 <div id="bfpaypaladvanced-card-submit">
     <button value="submit"
