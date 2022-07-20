@@ -8,8 +8,8 @@
  */
 
 use Joomla\CMS\Factory;
-use Joomla\CMS\Language\Text;
-use Joomla\CMS\Uri\Uri;
+
+/** @var object $plugin */
 
 defined('_JEXEC') or die('Restricted access');
 
@@ -17,37 +17,15 @@ Factory::getDocument()->addStyleSheet('https://www.paypalobjects.com/webstatic/e
 ?>
 <div class="card_container">
     <form id="bfpaypaladvanced-card-form">
-        <label for="card-number"><?php echo Text::_('PLG_BFPAYPALADVANCED_CARDNUMBER'); ?></label>
-        <div id="card-number" class="card_field"></div>
+        <?php
+		$templateFile = JPATH_THEMES . '/' . Factory::getApplication()->getTemplate(false) .
+                                                '/html/plg_hikashoppayment_bfpaypaladvanced/cardform.php';
+        if (!is_file($templateFile))
+		{
+			$templateFile = dirname(__DIR__) . '/tmpl/cardform.php';
+        }
 
-        <div>
-            <label for="expiration-date"><?php echo Text::_('PLG_BFPAYPALADVANCED_EXPIRATIONDATE'); ?></label>
-            <div id="expiration-date" class="card_field"></div>
-        </div>
-
-        <div>
-            <label for="cvv"><?php echo Text::_('PLG_BFPAYPALADVANCED_CVV'); ?></label>
-            <div id="cvv" class="card_field"></div>
-        </div>
-
-        <label for="card-holder-name"><?php echo Text::_('PLG_BFPAYPALADVANCED_NAMEONCARD'); ?></label>
-        <input type="text"
-               id="card-holder-name"
-               name="card-holder-name"
-               autocomplete="off"
-               placeholder="<?php echo Text::_('PLG_BFPAYPALADVANCED_NAMEONCARD_PLACEHOLDER'); ?>"
-        />
-
-        <div id="bfpaypaladvanced-card-submit">
-            <button value="submit"
-                    id="bfpaypaladvanced-card-submitbtn"
-                    class="hikabtn hikacart"
-                    style="position:relative;">
-				<?php echo Text::_('PLG_BFPAYPALADVANCED_PAYWITHCARD'); ?>
-                <img id="bfpaypaladvanced-card-submitbtn-busy"
-                     src="<?php echo Uri::root() . '/plugins/hikashoppayment/bfpaypaladvanced/images/spinner.gif'; ?>"
-                     style="position:absolute;right:1em;display:none;height:25px;"/>
-            </button>
-        </div>
+        include $templateFile;
+        ?>
     </form>
 </div>

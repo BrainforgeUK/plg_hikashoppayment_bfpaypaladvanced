@@ -29,7 +29,7 @@ $jsArgs[] = 'intent=capture';
 
         function enablePayButton()
         {
-            var submitbtn = document.getElementById('bfpaypaladvanced-card-submitbtn');
+            let submitbtn = document.getElementById('bfpaypaladvanced-card-submitbtn');
             if (submitbtn) {
                 submitbtn.disabled = '';
                 submitbtn.classList.remove("submitted");
@@ -39,12 +39,39 @@ $jsArgs[] = 'intent=capture';
 
         function disablePayButton()
         {
-            var submitbtn = document.getElementById('bfpaypaladvanced-card-submitbtn');
+            let submitbtn = document.getElementById('bfpaypaladvanced-card-submitbtn');
             if (submitbtn) {
                 submitbtn.disabled = 'disabled';
                 submitbtn.classList.add("submitted");
                 document.getElementById('bfpaypaladvanced-card-submitbtn-busy').style.display = '';
             }
+        }
+
+        function getCardHolderAddress() {
+            let cardHolderAddress = { };
+            let el;
+            <?php
+            foreach (array(
+                         'streetAddress'     => 'street',
+                         'extendedAddress'   => 'unit',
+                         'region'            => 'state',
+                         'locality'          => 'city',
+                         'postalCode'        => 'zip',
+                         'countryCodeAlpha2' => 'country',
+                     ) as $jsfield => $elid)
+            {
+                echo "
+                    el = document.getElementById('card-billing-address-${elid}');
+                    if (el) {
+                        cardHolderAddress.${jsfield} = el.value;
+                    }
+                    else {
+                        cardHolderAddress.${jsfield} = '';
+                    }
+                    ";
+            }
+            ?>
+            return cardHolderAddress;
         }
 
         function initCardForm() {
@@ -102,6 +129,8 @@ $jsArgs[] = 'intent=capture';
                     disablePayButton();
 
                     hf.submit({
+                        cardholderName: document.getElementById("card-holder-name").value,
+                        cardholderAddress: getCardHolderAddress(),
                         // Trigger 3D Secure authentication
                         contingencies: ['<?php echo $paypalHelper->get3DSecureContingency(); ?>'],
                     }).catch(function (err) {
