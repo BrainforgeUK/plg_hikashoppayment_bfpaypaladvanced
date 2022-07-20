@@ -26,6 +26,8 @@ $jsArgs[] = 'intent=capture';
 
     <script>
         let orderId = "";
+        const createOrderUrl = '<?php echo $paypalHelper->getNotifyUrl('createorder'); ?>';
+        const captureUrl     = '<?php echo $paypalHelper->getNotifyUrl('capture'); ?>';
 
         function enablePayButton()
         {
@@ -85,7 +87,7 @@ $jsArgs[] = 'intent=capture';
             // Renders card fields
             paypal.HostedFields.render({
                 createOrder: function () {
-                    return fetch('<?php echo $paypalHelper->getNotifyUrl('createorder'); ?>')
+                    return fetch(createOrderUrl)
                         .then((res) => res.json())
                         .then((orderData) => {
                             orderId = orderData.id;
@@ -139,7 +141,7 @@ $jsArgs[] = 'intent=capture';
                         if (payload == undefined) {
                             return;
                         }
-                        fetch('<?php echo $paypalHelper->getNotifyUrl('capture'); ?>&payload=' + btoa(JSON.stringify(payload))
+                        fetch(captureUrl + '&payload=' + btoa(JSON.stringify(payload))
                         ).then(function(res) {
                             return res.json();
                         }).then(function (response) {
