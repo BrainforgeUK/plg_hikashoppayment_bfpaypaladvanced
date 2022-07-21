@@ -26,7 +26,9 @@ class plgHikashoppaymentBfpaypaladvanced extends hikashopPaymentPlugin
 		'shiftliability' 		=> array('PLG_BFPAYPALADVANCED_SHIFTLIABILITY', 'radio',
 														array('1' => 'PLG_BFPAYPALADVANCED_IFPOSSIBLE', '0' => 'PLG_BFPAYPALADVANCED_WITH_MERCHANT', )),
 		'usecardholderaddress'	=> array('PLG_BFPAYPALADVANCED_USECARDHOLDERADDRESS', 'radio',
-														array('1' => 'HIKASHOP_YES', '0' => 'HIKASHOP_NO', )),
+														array('0' => 'HIKASHOP_NO',
+															  '1' => 'PLG_BFPAYPALADVANCED_FULLADDRESS',
+															  '2' => 'PLG_BFPAYPALADVANCED_POSTCODEONLY')),
 		'sandbox' 				=> array('SANDBOX', 'radio',
 														array('1' => 'HIKASHOP_YES', '0' => 'HIKASHOP_NO', )),
 		'order_status' 			=> array('ORDER_STATUS',    'orderstatus'),
@@ -491,5 +493,38 @@ class plgHikashoppaymentBfpaypaladvanced extends hikashopPaymentPlugin
 		$script[] = 'key=' . $this->getSecretKey();
 
 		return Uri::root() . basename($notifyScript) . '?' . implode('&', $script);
+	}
+
+	/*
+	 */
+	public function onAfterOrderProductsListingDisplay(&$order, $type) {
+		if(empty($order->order_id))
+		{
+			return;
+		}
+
+		if($order->order_payment_method != $this->name)
+		{
+			return;
+		}
+
+		$this->pluginParams($order->order_payment_id);
+
+		$db = JFactory::getDBO();
+		$query = 'SELECT history_data FROM '.hikashop_table('history').
+			' WHERE history_order_id = '.(int)$order->order_id .
+				' AND history_new_status = \'' . $order->order_payment_params->paid_status . '\' ' .
+				' AND history_type = \'payment\' AND history_data > \'\' '.
+			' ORDER BY history_created DESC LIMIT 1';
+		$db->setQuery($query);
+		$history = $db->loadResult();
+
+		if (empty($history))
+		{
+			return;
+		}
+
+		$history = unserialize($history);
+		$order->bfpaypaladvanced_card = $history['payment_source']['card'];
 	}
 }

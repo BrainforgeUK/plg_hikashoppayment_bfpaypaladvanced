@@ -360,25 +360,6 @@ class plgHikashoppaymentBfpaypaladvancedHelper
 
 	/*
 	 */
-	public function consoleLog($log=null, $alert=null)
-	{
-		$result = [];
-
-		if ($this->plugin_params->debug && !empty($log))
-		{
-			$result[] = 'console.log(' . implode(',', (array)$log) . ');';
-		}
-
-		if (!empty($alert))
-		{
-			$result[] = 'alert("' . str_replace('"', '\\"', Text::_($alert)) .'");';
-		}
-
-		return implode("\n", $result);
-	}
-
-	/*
-	 */
 	public function getAddressInfo($type='shipping')
 	{
 		$fields = array(

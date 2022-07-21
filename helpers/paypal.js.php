@@ -26,8 +26,13 @@ $jsArgs[] = 'intent=capture';
 
     <script>
         let orderId = "";
-        const createOrderUrl = '<?php echo $paypalHelper->getNotifyUrl('createorder'); ?>';
-        const captureUrl     = '<?php echo $paypalHelper->getNotifyUrl('capture'); ?>';
+
+        const createOrderUrl        = '<?php echo $paypalHelper->getNotifyUrl('createorder'); ?>';
+        const captureUrl            = '<?php echo $paypalHelper->getNotifyUrl('capture'); ?>';
+        const textOrderError        = '<?php echo Text::_('PLG_BFPAYPALADVANCED_ORDERERROR'); ?>';
+        const textPaymentError      = '<?php echo Text::_('PLG_BFPAYPALADVANCED_PAYMENTERROR'); ?>';
+        const debug                 = <?php echo $paypalHelper->plugin_params->debug ?>;
+        const usecardholderaddress  = <?php echo $paypalHelper->plugin_params->usecardholderaddress ?>;
 
         function enablePayButton()
         {
@@ -49,7 +54,17 @@ $jsArgs[] = 'intent=capture';
             }
         }
 
+        function consoleLog(err) {
+            if (debug) {
+                console.log(err);
+            }
+        }
+
         function getCardHolderAddress() {
+            if (!usecardholderaddress) {
+                return null;
+            }
+
             let cardHolderAddress = { };
             let el;
             <?php
@@ -80,7 +95,7 @@ $jsArgs[] = 'intent=capture';
             if (!paypal.HostedFields.isEligible()) {
                 // Hides card fields if the merchant isn't eligible
                 document.querySelector("#bfpaypaladvanced-card-form").style = 'display: none';
-                <?php echo $paypalHelper->consoleLog(null, 'PLG_BFPAYPALADVANCED_UNSUPPORTEDMERCHANT'); ?>
+                alert('<?php echo Text::_('PLG_BFPAYPALADVANCED_UNSUPPORTEDMERCHANT'); ?>');
                 return;
             }
 
@@ -93,7 +108,8 @@ $jsArgs[] = 'intent=capture';
                             orderId = orderData.id;
                             return orderData.id;
                     }).catch(function (err) {
-                        <?php echo $paypalHelper->consoleLog('err', 'PLG_BFPAYPALADVANCED_ORDERERROR'); ?>
+                        consoleLog(err);
+                        alert(textOrderError);
                     });
                 },
 
@@ -132,7 +148,7 @@ $jsArgs[] = 'intent=capture';
 
                     hf.submit({
                         cardholderName: document.getElementById("card-holder-name").value,
-                        cardholderAddress: getCardHolderAddress(),
+                        billingAddress: getCardHolderAddress(),
                         // Trigger 3D Secure authentication
                         contingencies: ['<?php echo $paypalHelper->get3DSecureContingency(); ?>'],
                     }).catch(function (err) {
@@ -164,13 +180,14 @@ $jsArgs[] = 'intent=capture';
                                     window.location.href = response.url;
                                     break;
                                 default:
-                            		<?php echo $paypalHelper->consoleLog(null, 'PLG_BFPAYPALADVANCED_PAYMENTERROR'); ?>
+                                    alert(textPaymentError);
                                     break;
                             }
                             enablePayButton();
 
                         }).catch(function (err) {
-                            <?php echo $paypalHelper->consoleLog('err', 'PLG_BFPAYPALADVANCED_PAYMENTERROR'); ?>
+                            consoleLog(err);
+                            alert(textPaymentError);
                             enablePayButton();
                         });
                     });
