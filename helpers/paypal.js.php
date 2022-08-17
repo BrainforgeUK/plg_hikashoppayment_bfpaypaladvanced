@@ -92,6 +92,7 @@ $jsArgs[] = 'intent=capture';
         }
 
         function initCardForm() {
+
             if (!paypal.HostedFields.isEligible()) {
                 // Hides card fields if the merchant isn't eligible
                 document.querySelector("#bfpaypaladvanced-card-form").style = 'display: none';
@@ -192,6 +193,10 @@ $jsArgs[] = 'intent=capture';
                         });
                     });
                 });
+            }).catch(function (err) {
+                consoleLog(err);
+                consoleLog("Token : <?php echo $paypalHelper->paypal_params->clientToken; ?>");
+                alert(err.message);
             });
         };
 
