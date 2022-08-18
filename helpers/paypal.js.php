@@ -31,8 +31,9 @@ $jsArgs[] = 'intent=capture';
         const captureUrl            = '<?php echo $paypalHelper->getNotifyUrl('capture'); ?>';
         const textOrderError        = '<?php echo Text::_('PLG_BFPAYPALADVANCED_ORDERERROR'); ?>';
         const textPaymentError      = '<?php echo Text::_('PLG_BFPAYPALADVANCED_PAYMENTERROR'); ?>';
-        const debug                 = <?php echo $paypalHelper->plugin_params->debug ?>;
-        const usecardholderaddress  = <?php echo $paypalHelper->plugin_params->usecardholderaddress ?>;
+        // Ensure these are a valid value to guard against Javascript errors
+        const debug                 = <?php echo intval(@$paypalHelper->plugin_params->debug); ?>;
+        const usecardholderaddress  = <?php echo intval(@$paypalHelper->plugin_params->usecardholderaddress); ?>;
 
         function enablePayButton()
         {
